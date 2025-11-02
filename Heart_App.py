@@ -47,7 +47,6 @@ st.set_page_config(
 st.title("❤️ Heart Disease Prediction App")
 st.write("A machine learning model that estimates heart disease probability from medical variables.")
 
-
 # --------------------------
 # Load Model + Scaler
 # --------------------------
@@ -57,27 +56,45 @@ SCALER_PATH = "standard_scaler.joblib"
 model = joblib.load(MODEL_PATH)
 scaler = joblib.load(SCALER_PATH)
 
-# Feature order
-numerical_features = [
-    "age", "sex", "cp", "trestbps", "chol", "fbs",
-    "restecg", "thalach", "exang", "oldpeak",
-    "slope", "ca", "thal"
-]
-
-
 # --------------------------
 # Sidebar Inputs
 # --------------------------
 st.sidebar.header("📝 Enter Patient Information")
 
 input_data = {}
-for feature in numerical_features:
-    input_data[feature] = st.sidebar.number_input(
-        feature.capitalize(), 
-        value=0.0, 
-        step=1.0 if feature != "oldpeak" else 0.1
-    )
 
+# Numeric inputs
+input_data['age'] = st.sidebar.number_input("Age", min_value=1, max_value=120, value=50)
+input_data['trestbps'] = st.sidebar.number_input("Resting BP", min_value=80, max_value=200, value=120)
+input_data['chol'] = st.sidebar.number_input("Cholesterol", min_value=100, max_value=600, value=200)
+input_data['thalach'] = st.sidebar.number_input("Max Heart Rate", min_value=60, max_value=250, value=150)
+input_data['oldpeak'] = st.sidebar.number_input("ST Depression (oldpeak)", min_value=0.0, max_value=10.0, value=1.0, step=0.1)
+
+# Categorical inputs
+input_data['sex'] = st.sidebar.selectbox(
+    "Sex", options=[0,1],
+    format_func=lambda x: "Female" if x==0 else "Male"
+)
+input_data['cp'] = st.sidebar.selectbox(
+    "Chest Pain Type", options=[0,1,2,3],
+    format_func=lambda x: ["Typical angina","Atypical angina","Non-anginal pain","Asymptomatic"][x]
+)
+input_data['fbs'] = st.sidebar.selectbox("Fasting Blood Sugar > 120 mg/dl", options=[0,1])
+input_data['restecg'] = st.sidebar.selectbox("Resting ECG", options=[0,1,2])
+input_data['exang'] = st.sidebar.selectbox("Exercise Induced Angina", options=[0,1])
+input_data['slope'] = st.sidebar.selectbox("ST Slope", options=[0,1,2])
+input_data['ca'] = st.sidebar.selectbox("Number of Major Vessels (0-3)", options=[0,1,2,3])
+input_data['thal'] = st.sidebar.selectbox(
+    "Thalassemia", options=[0,1,2],
+    format_func=lambda x: ["Normal","Fixed Defect","Reversible Defect"][x]
+)
+
+# Ensure proper order for model
+feature_order = [
+    "age", "sex", "cp", "trestbps", "chol", "fbs",
+    "restecg", "thalach", "exang", "oldpeak",
+    "slope", "ca", "thal"
+]
 
 # --------------------------
 # Prediction Logic
@@ -119,12 +136,11 @@ def log_prediction(input_dict, pred, proba):
     else:
         df_row.to_csv(log_file, index=False)
 
-
 # --------------------------
 # Predict Button
 # --------------------------
 if st.sidebar.button("🔍 Predict"):
-    df = pd.DataFrame([input_data], columns=numerical_features)
+    df = pd.DataFrame([input_data], columns=feature_order)
 
     scaled = scaler.transform(df)
     proba = model.predict_proba(scaled)[0][1]
@@ -142,12 +158,10 @@ if st.sidebar.button("🔍 Predict"):
 
     # Generate PDF
     pdf_path = generate_pdf(pred, proba, input_data)
-
     with open(pdf_path, "rb") as f:
         st.download_button(
             label="📄 Download PDF Report",
             data=f,
-            file_name=pdf_path.split("/")[-1],
+            file_name=os.path.basename(pdf_path),
             mime="application/pdf"
         )
-
