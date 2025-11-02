@@ -52,7 +52,7 @@ st.write("A machine learning model that estimates heart disease probability from
 # Load Model + Scaler
 # --------------------------
 MODEL_PATH = "random_forest_heart_disease_model.joblib"
-SCALER_PATH = "scaler.joblib"
+SCALER_PATH = "standard_scaler.joblib"
 
 model = joblib.load(MODEL_PATH)
 scaler = joblib.load(SCALER_PATH)
@@ -150,3 +150,4 @@ if st.sidebar.button("🔍 Predict"):
             file_name=pdf_path.split("/")[-1],
             mime="application/pdf"
         )
+
